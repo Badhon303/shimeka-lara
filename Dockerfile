@@ -66,7 +66,7 @@ COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Expose port
-EXPOSE 80
+EXPOSE 8000
 
 # Start services via supervisor
 CMD ["/entrypoint.sh"]
