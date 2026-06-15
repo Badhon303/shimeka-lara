@@ -30,21 +30,22 @@ WORKDIR /var/www
 # Copy project files
 COPY . .
 
-# Install PHP dependencies (no dev, no scripts to avoid missing dev class errors)
-RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-scripts \
-    && composer dump-autoload --optimize --no-dev
-
-# Copy built frontend assets
-COPY --from=frontend /app/public/build ./public/build
-
-# Create required storage directories
+# Create required directories before composer runs (package:discover needs bootstrap/cache)
 RUN mkdir -p storage/framework/cache \
              storage/framework/sessions \
              storage/framework/views \
              storage/logs \
              bootstrap/cache \
-    && chown -R www-data:www-data /var/www \
-    && chmod -R 755 storage bootstrap/cache
+    && chmod -R 775 storage bootstrap/cache
+
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+# Copy built frontend assets
+COPY --from=frontend /app/public/build ./public/build
+
+# Final permissions
+RUN chown -R www-data:www-data /var/www
 
 # Nginx config
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
