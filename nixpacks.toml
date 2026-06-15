@@ -2,7 +2,7 @@
 PORT = "8000"
 
 [phases.setup]
-nixPkgs = ["php82", "php82Extensions.pdo", "php82Extensions.pdo_pgsql", "php82Extensions.pgsql", "php82Extensions.gd", "php82Extensions.zip", "php82Extensions.mbstring", "php82Extensions.tokenizer", "php82Extensions.xml", "php82Extensions.ctype", "php82Extensions.bcmath", "php82Extensions.opcache", "php82Packages.composer", "nodejs_20"]
+nixPkgs = ["php84", "php84Extensions.pdo", "php84Extensions.pdo_pgsql", "php84Extensions.pgsql", "php84Extensions.gd", "php84Extensions.zip", "php84Extensions.mbstring", "php84Extensions.tokenizer", "php84Extensions.xml", "php84Extensions.ctype", "php84Extensions.bcmath", "php84Extensions.opcache", "php84Packages.composer", "nodejs_20"]
 
 [phases.install]
 cmds = [
