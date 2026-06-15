@@ -34,12 +34,11 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www
 
-# Copy composer files first for better caching
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
-
 # Copy project files (excluding build artifacts via .dockerignore)
 COPY . .
+
+# Run composer install (artisan file must exist for post-autoload scripts)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
 # Copy built frontend assets from node stage
 COPY --from=frontend /app/public/build ./public/build
