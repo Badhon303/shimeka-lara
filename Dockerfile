@@ -43,6 +43,13 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-di
 # Copy built frontend assets from node stage
 COPY --from=frontend /app/public/build ./public/build
 
+# Create storage directories (ignored by .gitignore)
+RUN mkdir -p /var/www/storage/framework/cache \
+    && mkdir -p /var/www/storage/framework/sessions \
+    && mkdir -p /var/www/storage/framework/views \
+    && mkdir -p /var/www/storage/logs \
+    && mkdir -p /var/www/bootstrap/cache
+
 # Set permissions
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 755 /var/www/storage \
