@@ -24,6 +24,3 @@ yarn-error.log
 /.zed
 *.md
 !README.md
-Dockerfile
-docker-compose.yml
-docker/
