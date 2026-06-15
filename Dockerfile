@@ -1,7 +1,18 @@
 # Production Dockerfile for Glow & Glam E-commerce
 # Laravel + Vue SPA with PostgreSQL
 
-FROM php:8.2-fpm-alpine
+# Stage 1: Build frontend assets
+FROM node:20-alpine AS frontend
+
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci --include=dev
+
+COPY . .
+RUN npm run build
+
+# Stage 2: PHP runtime
+FROM php:8.4-fpm-alpine
 
 # Install system dependencies
 RUN apk add --no-cache \
@@ -13,8 +24,8 @@ RUN apk add --no-cache \
     zip \
     unzip \
     curl \
-    nodejs \
-    npm \
+    openssl \
+    linux-headers \
     && docker-php-ext-install pdo pdo_pgsql pgsql gd zip opcache
 
 # Install Composer
@@ -27,15 +38,11 @@ WORKDIR /var/www
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-# Copy package files and build frontend
-COPY package.json package-lock.json* ./
-RUN npm ci --include=dev
-
-# Copy project files
+# Copy project files (excluding build artifacts via .dockerignore)
 COPY . .
 
-# Build frontend assets
-RUN npm run build
+# Copy built frontend assets from node stage
+COPY --from=frontend /app/public/build ./public/build
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www \
