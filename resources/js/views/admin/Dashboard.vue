@@ -87,7 +87,7 @@
                 <h4>{{ product.name }}</h4>
                 <p>Only {{ product.stock_quantity }} left in stock</p>
               </div>
-              <router-link :to="`/admin/products/${product.id}/edit`" class="btn btn-sm">
+              <router-link to="/admin/low-stock" class="btn btn-sm">
                 Restock
               </router-link>
             </div>
