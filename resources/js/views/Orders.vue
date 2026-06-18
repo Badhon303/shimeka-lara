@@ -88,7 +88,12 @@ function formatDate(date) {
 
 function formatVariant(variant) {
   if (!variant) return '';
-  return Object.entries(variant).map(([key, value]) => `${key}: ${value}`).join(', ');
+  let data = variant;
+  if (typeof variant === 'string') {
+    try { data = JSON.parse(variant); } catch (e) { return variant; }
+  }
+  if (typeof data !== 'object' || data === null) return '';
+  return Object.entries(data).map(([key, value]) => `${key}: ${value}`).join(', ');
 }
 
 function viewOrder(id) {

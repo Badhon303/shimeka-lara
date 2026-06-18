@@ -53,6 +53,18 @@
             </div>
           </router-link>
         </div>
+        <!-- Mobile horizontal category scroll -->
+        <div class="categories-scroll mobile-only">
+          <router-link
+            v-for="category in leafCategories"
+            :key="category.id"
+            :to="`/category/${category.slug}`"
+            class="category-pill"
+          >
+            <img :src="category.image || '/images/placeholder.jpg'" :alt="category.name" />
+            <span>{{ category.name }}</span>
+          </router-link>
+        </div>
       </div>
     </section>
 
@@ -70,6 +82,13 @@
             :product="product"
           />
         </div>
+        <div class="products-scroll mobile-only">
+          <ProductCard 
+            v-for="product in featuredProducts" 
+            :key="product.id"
+            :product="product"
+          />
+        </div>
         <div class="text-center mt-8">
           <router-link to="/shop" class="btn btn-outline">View All Products</router-link>
         </div>
@@ -81,7 +100,7 @@
       <div class="container">
         <div class="split-section">
           <div class="split-image">
-            <img src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&q=80" alt="Cosmetics" />
+            <img :src="homeBanners.cosmetics || 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&q=80'" alt="Cosmetics" />
           </div>
           <div class="split-content">
             <span class="section-subtitle">Beauty Essentials</span>
@@ -120,7 +139,7 @@
             <router-link to="/category/dresses" class="btn btn-primary mt-4">Shop Dresses</router-link>
           </div>
           <div class="split-image">
-            <img src="https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80" alt="Dresses" />
+            <img :src="homeBanners.fashion || 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80'" alt="Dresses" />
           </div>
         </div>
       </div>
@@ -147,25 +166,10 @@
     <section class="section features-section">
       <div class="container">
         <div class="features-grid">
-          <div class="feature-item">
-            <div class="feature-icon">🚚</div>
-            <h4>Free Shipping</h4>
-            <p>On orders over ৳1000</p>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">🔒</div>
-            <h4>Secure Payment</h4>
-            <p>100% secure checkout</p>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">🎁</div>
-            <h4>Gift Wrapping</h4>
-            <p>Beautiful gift packages</p>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">↩️</div>
-            <h4>Easy Returns</h4>
-            <p>7-day return policy</p>
+          <div v-for="(feature, i) in homeFeatures" :key="i" class="feature-item">
+            <div class="feature-icon">{{ feature.icon }}</div>
+            <h4>{{ feature.title }}</h4>
+            <p>{{ feature.description }}</p>
           </div>
         </div>
       </div>
@@ -215,6 +219,14 @@ const defaultHeroSlides = [
 ];
 
 const heroSlides = ref([...defaultHeroSlides]);
+const homeBanners = ref({ cosmetics: '', fashion: '' });
+const defaultHomeFeatures = [
+  { icon: '🚚', title: 'Free Shipping', description: 'On orders over ৳1000' },
+  { icon: '💵', title: 'Cash on Delivery', description: 'Pay when you receive' },
+  { icon: '🎁', title: 'Gift Wrapping', description: 'Beautiful gift packages' },
+  { icon: '↩️', title: 'Easy Returns', description: '7-day return policy' }
+];
+const homeFeatures = ref([...defaultHomeFeatures]);
 
 const leafCategories = computed(() => {
   return categories.value;
@@ -255,6 +267,14 @@ async function fetchHomeData() {
     // Load hero slides from settings if available
     if (settingsRes.data.hero_slides && settingsRes.data.hero_slides.length > 0) {
       heroSlides.value = settingsRes.data.hero_slides;
+    }
+    // Load home banner images from settings
+    if (settingsRes.data.home_banners) {
+      homeBanners.value = settingsRes.data.home_banners;
+    }
+    // Load home features from settings
+    if (settingsRes.data.home_features && settingsRes.data.home_features.length > 0) {
+      homeFeatures.value = settingsRes.data.home_features;
     }
   } catch (err) {
     console.error('Failed to fetch home data:', err);

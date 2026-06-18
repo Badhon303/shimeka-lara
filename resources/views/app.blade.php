@@ -27,7 +27,7 @@
     <div id="preloader" style="
         position: fixed;
         inset: 0;
-        background: linear-gradient(135deg, #0f172a, #1e3a5f);
+        background: #fff0f5;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -36,21 +36,21 @@
         transition: opacity 0.5s ease, visibility 0.5s ease;
     ">
         <div style="
-            width: 60px;
-            height: 60px;
-            border: 3px solid rgba(255,255,255,0.1);
-            border-top-color: #ec4899;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #e91e63;
+            font-family: 'Playfair Display', serif;
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.05em;
+        ">Sʜɪᴍᴇᴋᴀ</div>
+        <div style="
+            width: 40px;
+            height: 40px;
+            border: 3px solid #ffc1e3;
+            border-top-color: #e91e63;
             border-radius: 50%;
-            animation: preloader-spin 0.8s linear infinite;
+            animation: preloader-spin 0.7s linear infinite;
         "></div>
-        <p style="
-            margin-top: 1.5rem;
-            color: rgba(255,255,255,0.7);
-            font-size: 0.875rem;
-            font-weight: 500;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        ">Loading...</p>
     </div>
     <style>
         @keyframes preloader-spin {

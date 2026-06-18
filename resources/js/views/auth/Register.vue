@@ -4,9 +4,8 @@
       <div class="auth-card">
         <div class="auth-header">
           <router-link to="/" class="logo">
-            <span class="logo-glow">Glow</span>
-            <span class="logo-amp">&</span>
-            <span class="logo-glam">Glam</span>
+            <img v-if="siteLogo" :src="siteLogo" :alt="siteName" class="logo-img" />
+            <span v-else class="logo-text">{{ siteName }}</span>
           </router-link>
           <h1>Create Account</h1>
           <p>Join us and discover amazing products</p>
@@ -133,11 +132,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
+import axios from 'axios';
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
 
 const form = ref({
@@ -152,6 +153,18 @@ const form = ref({
 const showPassword = ref(false);
 const loading = ref(false);
 const error = ref('');
+const siteName = ref('Shimeka');
+const siteLogo = ref('');
+
+onMounted(async () => {
+  try {
+    const response = await axios.get('/settings');
+    siteName.value = response.data.site_name || 'Shimeka';
+    siteLogo.value = response.data.site_logo || '';
+  } catch (e) {
+    console.error('Failed to fetch settings:', e);
+  }
+});
 
 async function handleRegister() {
   if (form.value.password !== form.value.password_confirmation) {
@@ -165,7 +178,9 @@ async function handleRegister() {
   const result = await authStore.register(form.value);
 
   if (result.success) {
-    router.push('/');
+    // Redirect to the page user came from, or home
+    const redirectTo = route.query.redirect || '/';
+    router.push(redirectTo);
   } else {
     error.value = result.error;
   }
@@ -175,6 +190,27 @@ async function handleRegister() {
 </script>
 
 <style scoped>
+.logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.logo-img {
+  max-height: 50px;
+  max-width: 180px;
+  object-fit: contain;
+}
+
+.logo-text {
+  font-size: 1.75rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 .password-hint {
   font-size: 0.75rem;
   color: var(--gray-500);
@@ -240,4 +276,156 @@ async function handleRegister() {
 
 .social-btn.google { color: #EA4335; }
 .social-btn.facebook { color: #1877F2; }
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, var(--primary-50), var(--primary-100));
+}
+
+.auth-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  max-width: 1000px;
+  width: 100%;
+  background: var(--white);
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+}
+
+.auth-card {
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.auth-header h1 {
+  font-size: 1.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.auth-header p {
+  color: var(--gray-500);
+}
+
+.auth-image {
+  position: relative;
+}
+
+.auth-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 3rem;
+  background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+  color: var(--white);
+}
+
+.image-overlay h3 {
+  font-size: 1.5rem;
+  color: var(--white);
+  margin-bottom: 0.5rem;
+}
+
+.auth-footer {
+  margin-top: 2rem;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.auth-footer a {
+  color: var(--primary-600);
+  font-weight: 500;
+}
+
+.btn-block {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--gray-700);
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  transition: all var(--transition-fast);
+}
+
+.form-input:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px var(--primary-100);
+  outline: none;
+}
+
+.password-input {
+  position: relative;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-400);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.toggle-password svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.error-message {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #fef2f2;
+  color: #dc2626;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+  .auth-container {
+    grid-template-columns: 1fr;
+  }
+  .auth-image {
+    display: none;
+  }
+  .auth-card {
+    padding: 2rem;
+  }
+}
 </style>

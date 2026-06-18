@@ -135,8 +135,13 @@
               <span v-else-if="!allVariantsSelected">Select Options</span>
               <span v-else>Buy Now</span>
             </button>
-            <button @click="addToWishlist" class="btn btn-outline btn-lg wishlist-btn">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <button
+              @click="toggleWishlist"
+              class="btn btn-outline btn-lg wishlist-btn"
+              :class="{ active: isInWishlist }"
+              :title="isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" :fill="isInWishlist ? 'currentColor' : 'none'" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
               </svg>
             </button>
@@ -144,17 +149,17 @@
 
           <!-- Features -->
           <div class="product-features">
-            <div class="feature">
+            <div v-if="settings.free_shipping_threshold > 0" class="feature">
               <span class="icon">🚚</span>
-              <span>Free shipping over ৳1000</span>
+              <span>Free shipping over ৳{{ settings.free_shipping_threshold }}</span>
             </div>
             <div class="feature">
               <span class="icon">↩️</span>
               <span>7-day easy returns</span>
             </div>
             <div class="feature">
-              <span class="icon">🔒</span>
-              <span>Secure payment</span>
+              <span class="icon">💵</span>
+              <span>Cash on Delivery</span>
             </div>
           </div>
         </div>
@@ -242,6 +247,7 @@ const product = ref(null);
 const relatedProducts = ref([]);
 const loading = ref(true);
 const error = ref('');
+const settings = ref({ free_shipping_threshold: 0 });
 const addingToCart = ref(false);
 const buyingNow = ref(false);
 const quantity = ref(1);
@@ -308,6 +314,14 @@ const canIncreaseQty = computed(() => {
   return quantity.value < currentStock.value;
 });
 
+const inWishlist = ref(false);
+function checkWishlist() {
+  if (!product.value) { inWishlist.value = false; return; }
+  const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+  inWishlist.value = wishlist.some(item => item.id === product.value.id);
+}
+const isInWishlist = computed(() => inWishlist.value);
+
 function formatLabel(key) {
   return key.charAt(0).toUpperCase() + key.slice(1);
 }
@@ -345,10 +359,14 @@ async function fetchProduct() {
   quantity.value = 1;
 
   try {
-    const response = await axios.get(`/product/${route.params.slug}`);
-    product.value = response.data.product;
-    relatedProducts.value = response.data.related_products || [];
+    const [productRes, settingsRes] = await Promise.all([
+      axios.get(`/product/${route.params.slug}`),
+      axios.get('/settings').catch(() => ({ data: {} }))
+    ]);
+    product.value = productRes.data.product;
+    relatedProducts.value = productRes.data.related_products || [];
     tabs.value[1].name = `Reviews (${product.value?.review_count || 0})`;
+    settings.value = settingsRes.data;
   } catch (err) {
     console.error('Failed to fetch product:', err);
     error.value = 'Product not found or failed to load.';
@@ -407,19 +425,38 @@ async function buyNow() {
   buyingNow.value = false;
 }
 
-function addToWishlist() {
-  if (!authStore.isAuthenticated) {
-    if (window.$toast) window.$toast('Please login first', 'error');
-    return;
+function toggleWishlist() {
+  const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+  const index = wishlist.findIndex(item => item.id === product.value.id);
+  
+  if (index >= 0) {
+    wishlist.splice(index, 1);
+    localStorage.setItem('wishlist', JSON.stringify(wishlist));
+    if (window.$toast) window.$toast('Removed from wishlist', 'info');
+  } else {
+    wishlist.push({
+      id: product.value.id,
+      name: product.value.name,
+      slug: product.value.slug,
+      price: product.value.price,
+      featured_image: product.value.featured_image,
+      category: product.value.category
+    });
+    localStorage.setItem('wishlist', JSON.stringify(wishlist));
+    if (window.$toast) window.$toast('Added to wishlist!', 'success');
   }
-  if (window.$toast) window.$toast('Added to wishlist!', 'success');
+  // Trigger reactivity across components
+  window.dispatchEvent(new CustomEvent('wishlist-update'));
 }
 
 function formatDate(date) {
   return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-onMounted(fetchProduct);
+onMounted(() => {
+  fetchProduct();
+  window.addEventListener('wishlist-update', checkWishlist);
+});
 
 // Reload product when slug changes (same component reused)
 watch(() => route.params.slug, (newSlug) => {
@@ -566,22 +603,52 @@ watch(() => route.params.slug, (newSlug) => {
 .product-actions {
   display: flex;
   gap: 0.75rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   opacity: 1;
   transform: none;
   position: static;
   background: none;
+  margin-bottom: 1.5rem;
 }
 
 .product-actions .btn {
+  padding: 0.875rem 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border-radius: var(--radius-lg);
+}
+
+.product-actions .btn-primary {
   flex: 1;
-  min-width: 140px;
+}
+
+.product-actions .buy-now-btn {
+  flex: 0 0 auto;
+  min-width: 120px;
 }
 
 .wishlist-btn {
-  width: 52px;
-  flex: 0 0 52px;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
   padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-300);
+  background: var(--white);
+  transition: all var(--transition-fast);
+}
+
+.wishlist-btn:hover {
+  border-color: var(--primary-500);
+  color: var(--primary-500);
+}
+
+.wishlist-btn svg {
+  width: 22px;
+  height: 22px;
 }
 
 .error-container {
@@ -606,5 +673,37 @@ watch(() => route.params.slug, (newSlug) => {
 }
 .buy-now-btn:hover:not(:disabled) {
   background: var(--gray-800);
+}
+
+.wishlist-btn.active {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}
+
+@media (max-width: 480px) {
+  .product-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .product-actions .btn-primary {
+    flex: 1 1 100%;
+    order: 1;
+  }
+  .buy-now-btn {
+    flex: 1 1 calc(50% - 0.25rem);
+    order: 2;
+    min-width: auto;
+  }
+  .wishlist-btn {
+    flex: 0 0 52px;
+    width: 52px;
+    height: 52px;
+    order: 2;
+  }
+  .wishlist-btn svg {
+    width: 24px;
+    height: 24px;
+  }
 }
 </style>

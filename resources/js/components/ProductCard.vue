@@ -7,18 +7,12 @@
         <span v-if="product.is_new" class="product-badge badge-new">New</span>
         <span v-if="product.discount_percentage > 0" class="product-badge badge-sale">-{{ product.discount_percentage }}%</span>
         <span v-if="product.is_featured" class="product-badge badge-featured">Featured</span>
-        <router-link v-if="hasVariants" :to="`/product/${product.slug}`" class="product-badge badge-options">Options</router-link>
+        <router-link v-if="hasVariants" :to="`/product/${product.slug}`" class="product-badge badge-options">View</router-link>
       </div>
 
       <div class="product-actions">
-        <button @click="quickView" class="action-btn" title="Quick View">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-          </svg>
-        </button>
-        <button @click="addToWishlist" class="action-btn" title="Add to Wishlist">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <button @click="toggleWishlist" class="action-btn" :class="{ active: isInWishlist }" :title="isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'">
+          <svg xmlns="http://www.w3.org/2000/svg" :fill="isInWishlist ? 'currentColor' : 'none'" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
           </svg>
         </button>
@@ -48,40 +42,11 @@
       </div>
     </div>
 
-    <!-- Quick View Modal -->
-    <div v-if="showQuickView" class="quickview-overlay" @click.self="showQuickView = false">
-      <div class="quickview-modal">
-        <button @click="showQuickView = false" class="quickview-close">&times;</button>
-        <div class="quickview-body">
-          <img :src="product.featured_image || '/images/placeholder.jpg'" :alt="product.name" />
-          <div class="quickview-details">
-            <router-link :to="`/category/${product.category?.slug}`" class="qv-category">{{ product.category?.name }}</router-link>
-            <h3>{{ product.name }}</h3>
-            <div class="qv-price">
-              <span class="qv-current">৳{{ product.price }}</span>
-              <span v-if="product.compare_price > product.price" class="qv-original">৳{{ product.compare_price }}</span>
-            </div>
-            <p class="qv-desc">{{ product.short_description || product.description }}</p>
-            <div v-if="hasVariants" class="qv-variants">
-              <span class="qv-variant-badge">Has Options - View Product</span>
-            </div>
-            <div class="qv-actions">
-              <button @click="addToCart" class="btn btn-primary" :disabled="loading">
-                <span v-if="loading">...</span>
-                <span v-else-if="hasVariants">Select Options</span>
-                <span v-else>Add to Cart</span>
-              </button>
-              <button @click="goToProduct" class="btn btn-secondary">View Details</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
@@ -95,10 +60,21 @@ const cartStore = useCartStore();
 const authStore = useAuthStore();
 const router = useRouter();
 const loading = ref(false);
-const showQuickView = ref(false);
 
 const hasVariants = computed(() => {
   return props.product?.attributes && Object.keys(props.product.attributes).length > 0;
+});
+
+const inWishlist = ref(false);
+function checkWishlist() {
+  const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+  inWishlist.value = wishlist.some(item => item.id === props.product.id);
+}
+const isInWishlist = computed(() => inWishlist.value);
+
+onMounted(() => {
+  checkWishlist();
+  window.addEventListener('wishlist-update', checkWishlist);
 });
 
 async function addToCart() {
@@ -115,26 +91,30 @@ async function addToCart() {
   }
 }
 
-function addToWishlist() {
-  if (!authStore.isAuthenticated) {
-    router.push('/login');
-    return;
+function toggleWishlist() {
+  const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+  const index = wishlist.findIndex(item => item.id === props.product.id);
+  
+  if (index >= 0) {
+    wishlist.splice(index, 1);
+    localStorage.setItem('wishlist', JSON.stringify(wishlist));
+    if (window.$toast) window.$toast('Removed from wishlist', 'info');
+  } else {
+    wishlist.push({
+      id: props.product.id,
+      name: props.product.name,
+      slug: props.product.slug,
+      price: props.product.price,
+      featured_image: props.product.featured_image,
+      category: props.product.category
+    });
+    localStorage.setItem('wishlist', JSON.stringify(wishlist));
+    if (window.$toast) window.$toast('Added to wishlist!', 'success');
   }
-  if (window.$toast) {
-    window.$toast('Added to wishlist!', 'success');
-  }
+  // Trigger reactivity across components
+  window.dispatchEvent(new CustomEvent('wishlist-update'));
 }
 
-function quickView() {
-  showQuickView.value = true;
-}
-
-function goToProduct() {
-  showQuickView.value = false;
-  setTimeout(() => {
-    router.push(`/product/${props.product.slug}`);
-  }, 150);
-}
 </script>
 
 <style scoped>
@@ -274,28 +254,33 @@ function goToProduct() {
   pointer-events: none;
 }
 
-/* Quick View Modal */
-.quickview-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 1rem; }
-.quickview-modal { background: var(--white); border-radius: var(--radius-2xl); width: 100%; max-width: 700px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: var(--shadow-2xl); }
-.quickview-close { position: absolute; top: 1rem; right: 1rem; width: 32px; height: 32px; background: var(--gray-100); border: none; border-radius: var(--radius-full); font-size: 1.25rem; cursor: pointer; z-index: 10; }
-.quickview-close:hover { background: var(--gray-200); }
-.quickview-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
-.quickview-body img { width: 100%; height: 100%; object-fit: cover; min-height: 300px; }
-.quickview-details { padding: 1.5rem; display: flex; flex-direction: column; justify-content: center; }
-.qv-category { font-size: 0.75rem; text-transform: uppercase; color: var(--primary-500); letter-spacing: 0.05em; margin-bottom: 0.5rem; text-decoration: none; }
-.quickview-details h3 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--gray-900); }
-.qv-price { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
-.qv-current { font-size: 1.25rem; font-weight: 700; color: var(--primary-600); }
-.qv-original { font-size: 1rem; color: var(--gray-400); text-decoration: line-through; }
-.qv-desc { font-size: 0.875rem; color: var(--gray-600); line-height: 1.6; margin-bottom: 1rem; }
-.qv-variant-badge { display: inline-block; padding: 0.375rem 0.75rem; background: var(--primary-50); color: var(--primary-600); border-radius: var(--radius-full); font-size: 0.75rem; margin-bottom: 1rem; }
-.qv-actions { display: flex; gap: 0.75rem; }
-.qv-actions .btn { flex: 1; padding: 0.75rem; text-align: center; border-radius: var(--radius-md); font-weight: 600; }
-.qv-actions .btn-primary { background: var(--primary-500); color: var(--white); }
-.qv-actions .btn-secondary { background: var(--gray-100); color: var(--gray-800); }
+.action-btn.active {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}
 
-@media (max-width: 640px) {
-  .quickview-body { grid-template-columns: 1fr; }
-  .quickview-body img { min-height: 200px; }
+/* Mobile: Always show action buttons */
+@media (max-width: 768px) {
+  .product-actions {
+    opacity: 1;
+    transform: translateY(0);
+    bottom: 0.5rem;
+    padding: 0.5rem;
+    background: none;
+    justify-content: flex-end;
+  }
+  .action-btn {
+    width: 36px;
+    height: 36px;
+    box-shadow: var(--shadow-md);
+  }
+  .add-to-cart-btn {
+    opacity: 1;
+    transform: translateY(0);
+    position: relative;
+    padding: 0.625rem;
+    font-size: 0.875rem;
+  }
 }
 </style>

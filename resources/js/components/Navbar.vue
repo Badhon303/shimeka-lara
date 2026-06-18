@@ -44,10 +44,11 @@
           </svg>
         </button>
 
-        <router-link v-if="authStore.isAuthenticated" to="/wishlist" class="icon-btn">
+        <router-link to="/wishlist" class="icon-btn cart-btn">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
           </svg>
+          <span v-if="wishlistCount > 0" class="cart-badge">{{ wishlistCount }}</span>
         </router-link>
 
         <button class="icon-btn cart-btn" @click="cartStore.toggleDrawer()">
@@ -168,6 +169,17 @@ const router = useRouter();
 const categories = ref([]);
 const siteName = ref('Glow & Glam');
 const siteLogo = ref('');
+const wishlistCount = ref(0);
+
+function updateWishlistCount() {
+  const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+  wishlistCount.value = wishlist.length;
+}
+
+onMounted(() => {
+  updateWishlistCount();
+  window.addEventListener('wishlist-update', updateWishlistCount);
+});
 
 const cosmeticsCategories = computed(() =>
   categories.value.filter(c => c.type === 'cosmetics')
@@ -238,3 +250,56 @@ onMounted(() => {
   fetchSettings();
 });
 </script>
+
+<style scoped>
+/* Mobile menu styles */
+.mobile-only { display: none; }
+
+.mobile-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--white);
+  border-top: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-lg);
+  z-index: 99;
+  padding: 1rem;
+}
+
+.mobile-menu a {
+  display: block;
+  padding: 0.75rem 1rem;
+  color: var(--gray-700);
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.mobile-menu a:hover {
+  background: var(--gray-50);
+  color: var(--primary-600);
+}
+
+.mobile-category {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--gray-200);
+}
+
+.mobile-category strong {
+  display: block;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 768px) {
+  .desktop-only { display: none !important; }
+  .mobile-only { display: none !important; }
+  .mobile-menu { display: none !important; }
+}
+</style>

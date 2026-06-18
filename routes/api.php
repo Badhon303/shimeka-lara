@@ -89,6 +89,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Settings
         Route::get('/settings/all', [AdminController::class, 'allSettings']);
         Route::post('/settings', [AdminController::class, 'updateSettings']);
+        Route::post('/upload-slide-image', [AdminController::class, 'uploadSlideImage']);
 
         // Coupons
         Route::get('/coupons', [AdminController::class, 'coupons']);

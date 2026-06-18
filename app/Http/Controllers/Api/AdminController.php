@@ -161,6 +161,16 @@ class AdminController extends Controller
         return response()->json(['message' => 'Settings updated successfully']);
     }
 
+    public function uploadSlideImage(Request $request)
+    {
+        $request->validate([
+            'slide_image' => 'required|image|max:2048',
+        ]);
+
+        $path = '/storage/' . $request->file('slide_image')->store('slides', 'public');
+        return response()->json(['url' => $path]);
+    }
+
     // Reports
     public function salesReport(Request $request)
     {

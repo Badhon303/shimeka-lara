@@ -138,6 +138,24 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
+    path: '/admin/hero-slider',
+    name: 'AdminHeroSlider',
+    component: () => import('../views/admin/HeroSlider.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/home-banners',
+    name: 'AdminHomeBanners',
+    component: () => import('../views/admin/HomeBanners.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/home-features',
+    name: 'AdminHomeFeatures',
+    component: () => import('../views/admin/HomeFeatures.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
     path: '/admin/settings',
     name: 'AdminSettings',
     component: () => import('../views/admin/Settings.vue'),

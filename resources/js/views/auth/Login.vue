@@ -4,9 +4,8 @@
       <div class="auth-card">
         <div class="auth-header">
           <router-link to="/" class="logo">
-            <span class="logo-glow">Glow</span>
-            <span class="logo-amp">&</span>
-            <span class="logo-glam">Glam</span>
+            <img v-if="siteLogo" :src="siteLogo" :alt="siteName" class="logo-img" />
+            <span v-else class="logo-text">{{ siteName }}</span>
           </router-link>
           <h1>Welcome Back</h1>
           <p>Sign in to your account to continue</p>
@@ -100,12 +99,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
 import { useCartStore } from '../../stores/cart';
+import axios from 'axios';
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
 const cartStore = useCartStore();
 
@@ -118,6 +119,18 @@ const form = ref({
 const showPassword = ref(false);
 const loading = ref(false);
 const error = ref('');
+const siteName = ref('Shimeka');
+const siteLogo = ref('');
+
+onMounted(async () => {
+  try {
+    const response = await axios.get('/settings');
+    siteName.value = response.data.site_name || 'Shimeka';
+    siteLogo.value = response.data.site_logo || '';
+  } catch (e) {
+    console.error('Failed to fetch settings:', e);
+  }
+});
 
 async function handleLogin() {
   loading.value = true;
@@ -127,7 +140,9 @@ async function handleLogin() {
 
   if (result.success) {
     await cartStore.fetchCart();
-    router.push('/');
+    // Redirect to the page user came from, or home
+    const redirectTo = route.query.redirect || '/';
+    router.push(redirectTo);
   } else {
     error.value = result.error;
   }
@@ -172,6 +187,22 @@ async function handleLogin() {
 .auth-header .logo {
   justify-content: center;
   margin-bottom: 1.5rem;
+  display: flex;
+}
+
+.auth-header .logo-img {
+  max-height: 50px;
+  max-width: 180px;
+  object-fit: contain;
+}
+
+.auth-header .logo-text {
+  font-size: 1.75rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .auth-header h1 {

@@ -9,6 +9,15 @@
 
     <div v-if="loading" class="loading">Loading...</div>
 
+    <div v-else-if="coupons.length === 0" class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" style="width: 64px; height: 64px; color: var(--gray-300); margin-bottom: 1rem;">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H4.5a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A7.125 7.125 0 0 0 4.875 12M12 4.875a7.125 7.125 0 0 1 7.125 7.125M12 4.875v14.25" />
+      </svg>
+      <h3>No coupons yet</h3>
+      <p>Create your first coupon to offer discounts to customers.</p>
+      <button @click="showModal = true; resetForm()" class="btn btn-primary">Create Coupon</button>
+    </div>
+
     <div v-else class="table-container">
       <table class="data-table">
         <thead>

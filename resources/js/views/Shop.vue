@@ -9,8 +9,19 @@
 
     <div class="container">
       <div class="shop-layout">
+        <!-- Mobile Filter Toggle + Overlay -->
+        <button class="mobile-filter-toggle" @click="showFilters = true">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H15" /></svg>
+          Filters
+        </button>
+        <div v-if="showFilters" class="filter-overlay" @click="showFilters = false"></div>
+
         <!-- Filters Sidebar -->
-        <aside class="filters-sidebar">
+        <aside class="filters-sidebar" :class="{ open: showFilters }">
+          <div class="filter-header-mobile">
+            <h4>Filters</h4>
+            <button @click="showFilters = false" class="close-filters">&times;</button>
+          </div>
           <div class="filter-section">
             <h4>Categories</h4>
             <div class="filter-options">
@@ -34,7 +45,7 @@
           </div>
 
           <div class="filter-section">
-            <button @click="applyFilters" class="btn btn-primary w-full">Apply Filters</button>
+            <button @click="applyFilters(); showFilters = false" class="btn btn-primary w-full">Apply Filters</button>
             <button @click="clearFilters" class="btn btn-secondary w-full mt-2">Clear</button>
           </div>
         </aside>
@@ -43,12 +54,18 @@
         <div class="products-area">
           <div class="toolbar">
             <p>{{ products.total || 0 }} products found</p>
-            <select v-model="sortBy" @change="applySort">
-              <option value="newest">Newest First</option>
-              <option value="price_low">Price: Low to High</option>
-              <option value="price_high">Price: High to Low</option>
-              <option value="name">Name</option>
-            </select>
+            <div class="toolbar-right">
+              <button class="filter-btn-mobile" @click="showFilters = true">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H15" /></svg>
+                Filter
+              </button>
+              <select v-model="sortBy" @change="applySort">
+                <option value="newest">Newest First</option>
+                <option value="price_low">Price: Low to High</option>
+                <option value="price_high">Price: High to Low</option>
+                <option value="name">Name</option>
+              </select>
+            </div>
           </div>
 
           <div v-if="loading" class="loading-grid">
@@ -96,6 +113,7 @@ const selectedCategories = ref([]);
 const maxPrice = ref(10000);
 const sortBy = ref('newest');
 const currentPage = ref(1);
+const showFilters = ref(false);
 
 async function fetchCategories() {
   try {
@@ -259,6 +277,12 @@ onMounted(() => {
   background: var(--white);
 }
 
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
 .loading-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -310,12 +334,86 @@ onMounted(() => {
   border-color: var(--primary-500);
 }
 
+.mobile-filter-toggle { display: none; }
+.filter-overlay { display: none; }
+.filter-header-mobile { display: none; }
+.filter-btn-mobile { display: none; }
+
 @media (max-width: 768px) {
-  .shop-layout {
-    grid-template-columns: 1fr;
+  .shop-layout { grid-template-columns: 1fr; position: relative; }
+  .mobile-filter-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-700);
+    margin-bottom: 1rem;
+    width: 100%;
+    justify-content: center;
+  }
+  .mobile-filter-toggle svg { width: 1.25rem; height: 1.25rem; }
+  .filter-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 150;
   }
   .filters-sidebar {
-    position: static;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    background: var(--white);
+    z-index: 200;
+    padding: 1rem;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    box-shadow: var(--shadow-xl);
   }
+  .filters-sidebar.open { transform: translateX(0); }
+  .filter-header-mobile {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .filter-header-mobile h4 { font-size: 1.125rem; margin: 0; }
+  .close-filters {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    background: var(--gray-100);
+    font-size: 1.25rem;
+    color: var(--gray-600);
+  }
+  .filter-btn-mobile {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.375rem 0.75rem;
+    background: var(--white);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    color: var(--gray-700);
+  }
+  .filter-btn-mobile svg { width: 1rem; height: 1rem; }
+  .toolbar-right { display: flex; align-items: center; gap: 0.5rem; }
+  .page-header { padding: 2rem 0; }
+  .page-header h1 { font-size: 1.5rem; }
+  .products-grid, .loading-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
 }
 </style>

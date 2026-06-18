@@ -31,11 +31,23 @@ import ProductCard from '../components/ProductCard.vue';
 const wishlist = ref([]);
 const loading = ref(true);
 
-onMounted(async () => {
-  // Simulate API call
-  await new Promise(r => setTimeout(r, 500));
-  wishlist.value = []; // Empty for now
+function loadWishlist() {
+  const stored = localStorage.getItem('wishlist');
+  if (stored) {
+    try {
+      wishlist.value = JSON.parse(stored);
+    } catch (e) {
+      wishlist.value = [];
+    }
+  } else {
+    wishlist.value = [];
+  }
+}
+
+onMounted(() => {
+  loadWishlist();
   loading.value = false;
+  window.addEventListener('wishlist-update', loadWishlist);
 });
 </script>
 
