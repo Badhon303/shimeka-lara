@@ -84,7 +84,6 @@
       </div>
       <div class="footer-developer">
         <p>Developed by <a href="https://metasoftinfo.com" target="_blank" rel="noopener noreferrer">Metasoft Info Solutions</a></p>
-        <router-link to="/admin/login" class="admin-login-link">Admin Login</router-link>
       </div>
     </div>
   </footer>

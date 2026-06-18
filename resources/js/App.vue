@@ -12,7 +12,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import Navbar from './components/Navbar.vue';
@@ -26,4 +26,14 @@ const authStore = useAuthStore();
 
 const isAdminRoute = computed(() => route.path.startsWith('/admin') && route.path !== '/admin/login');
 const isAdmin = computed(() => authStore.user?.is_admin);
+
+onMounted(() => {
+  // Remove preloader once Vue is mounted
+  const preloader = document.getElementById('preloader');
+  if (preloader) {
+    preloader.style.opacity = '0';
+    preloader.style.visibility = 'hidden';
+    setTimeout(() => preloader.remove(), 500);
+  }
+});
 </script>
