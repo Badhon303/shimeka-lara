@@ -2,9 +2,10 @@
   <aside class="admin-sidebar">
     <div class="sidebar-header">
       <router-link to="/" class="logo">
-        <span class="logo-glow">Glow</span>
-        <span class="logo-amp">&</span>
-        <span class="logo-glam">Glam</span>
+        <img v-if="siteLogo" :src="siteLogo" :alt="siteName" class="sidebar-logo-img" />
+        <template v-else>
+          <span class="sidebar-brand">{{ siteName }}</span>
+        </template>
       </router-link>
       <span class="admin-badge">Admin</span>
     </div>
@@ -103,6 +104,8 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 
 const pendingOrders = ref(0);
+const siteName = ref('Sʜɪᴍᴇᴋᴀ');
+const siteLogo = ref('');
 
 async function fetchPendingCount() {
   try {
@@ -113,7 +116,21 @@ async function fetchPendingCount() {
   }
 }
 
-onMounted(fetchPendingCount);
+async function fetchSettings() {
+  try {
+    const res = await axios.get('/settings');
+    const data = res.data;
+    if (data.site_name) siteName.value = data.site_name;
+    if (data.site_logo) siteLogo.value = data.site_logo;
+  } catch (e) {
+    console.error('Failed to fetch settings:', e);
+  }
+}
+
+onMounted(() => {
+  fetchPendingCount();
+  fetchSettings();
+});
 </script>
 
 <style scoped>
@@ -139,6 +156,22 @@ onMounted(fetchPendingCount);
 .sidebar-header .logo {
   font-size: 1.25rem;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.sidebar-logo-img {
+  max-height: 28px;
+  max-width: 120px;
+  object-fit: contain;
+}
+
+.sidebar-brand {
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .admin-badge {
