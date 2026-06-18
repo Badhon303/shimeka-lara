@@ -133,16 +133,28 @@ class AdminController extends Controller
 
     public function updateSettings(Request $request)
     {
-        $data = $request->validate([
-            'settings' => 'required|array',
-            'settings.*.key' => 'required|string',
-            'settings.*.value' => 'nullable',
-            'settings.*.type' => 'required|string|in:string,number,boolean,json',
-            'settings.*.group' => 'required|string',
-            'settings.*.label' => 'nullable|string',
+        $validated = $request->validate([
+            'settings' => 'required',
+            'logo_file' => 'nullable|image|max:2048',
         ]);
 
-        foreach ($data['settings'] as $item) {
+        // Parse settings (may be JSON string when sent via FormData)
+        $settings = $request->input('settings');
+        if (is_string($settings)) {
+            $settings = json_decode($settings, true);
+        }
+
+        if (!is_array($settings)) {
+            return response()->json(['message' => 'Invalid settings format'], 422);
+        }
+
+        // Handle logo upload
+        if ($request->hasFile('logo_file')) {
+            $logoPath = '/storage/' . $request->file('logo_file')->store('logos', 'public');
+            Setting::set('site_logo', $logoPath, 'string', 'site', 'Website Logo');
+        }
+
+        foreach ($settings as $item) {
             Setting::set($item['key'], $item['value'], $item['type'], $item['group'], $item['label'] ?? null);
         }
 

@@ -46,7 +46,7 @@
             class="category-card"
             :class="category.type"
           >
-            <img :src="category.image || '/images/category-placeholder.jpg'" :alt="category.name" />
+            <img :src="category.image || '/images/placeholder.jpg'" :alt="category.name" />
             <div class="category-overlay">
               <h3>{{ category.name }}</h3>
               <p>{{ category.products_count || 0 }} Products</p>
@@ -217,7 +217,7 @@ const defaultHeroSlides = [
 const heroSlides = ref([...defaultHeroSlides]);
 
 const leafCategories = computed(() => {
-  return categories.value.filter(c => (c.products_count || 0) > 0);
+  return categories.value;
 });
 
 function nextSlide() {

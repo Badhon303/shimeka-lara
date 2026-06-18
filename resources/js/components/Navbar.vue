@@ -3,30 +3,33 @@
     <div class="navbar-container">
       <!-- Logo -->
       <router-link to="/" class="logo">
-        <span class="logo-glow">Glow</span>
-        <span class="logo-amp">&</span>
-        <span class="logo-glam">Glam</span>
+        <img v-if="siteLogo" :src="siteLogo" :alt="siteName" class="logo-img" />
+        <template v-else>
+          <span class="logo-glow">{{ siteName }}</span>
+        </template>
       </router-link>
 
       <!-- Desktop Navigation -->
       <div class="nav-links desktop-only">
         <router-link to="/" class="nav-link" active-class="active">Home</router-link>
-        <div class="dropdown">
+        <div v-if="cosmeticsCategories.length > 0" class="dropdown">
           <span class="nav-link">Cosmetics</span>
           <div class="dropdown-menu">
-            <router-link to="/category/skincare">Skincare</router-link>
-            <router-link to="/category/makeup">Makeup</router-link>
-            <router-link to="/category/fragrance">Fragrance</router-link>
-            <router-link to="/category/haircare">Hair Care</router-link>
+            <router-link
+              v-for="cat in cosmeticsCategories"
+              :key="cat.id"
+              :to="`/category/${cat.slug}`"
+            >{{ cat.name }}</router-link>
           </div>
         </div>
-        <div class="dropdown">
+        <div v-if="fashionCategories.length > 0" class="dropdown">
           <span class="nav-link">Fashion</span>
           <div class="dropdown-menu">
-            <router-link to="/category/dresses">Dresses</router-link>
-            <router-link to="/category/tops">Tops</router-link>
-            <router-link to="/category/ethnic">Ethnic Wear</router-link>
-            <router-link to="/category/accessories">Accessories</router-link>
+            <router-link
+              v-for="cat in fashionCategories"
+              :key="cat.id"
+              :to="`/category/${cat.slug}`"
+            >{{ cat.name }}</router-link>
           </div>
         </div>
         <router-link to="/shop" class="nav-link" active-class="active">Shop All</router-link>
@@ -94,17 +97,23 @@
       <router-link to="/" @click="mobileMenuOpen = false">Home</router-link>
       <router-link to="/shop" @click="mobileMenuOpen = false">Shop All</router-link>
       <router-link to="/track" @click="mobileMenuOpen = false">Track Order</router-link>
-      <div class="mobile-category">
+      <div v-if="cosmeticsCategories.length > 0" class="mobile-category">
         <strong>Cosmetics</strong>
-        <router-link to="/category/skincare" @click="mobileMenuOpen = false">Skincare</router-link>
-        <router-link to="/category/makeup" @click="mobileMenuOpen = false">Makeup</router-link>
-        <router-link to="/category/fragrance" @click="mobileMenuOpen = false">Fragrance</router-link>
+        <router-link
+          v-for="cat in cosmeticsCategories"
+          :key="cat.id"
+          :to="`/category/${cat.slug}`"
+          @click="mobileMenuOpen = false"
+        >{{ cat.name }}</router-link>
       </div>
-      <div class="mobile-category">
+      <div v-if="fashionCategories.length > 0" class="mobile-category">
         <strong>Fashion</strong>
-        <router-link to="/category/dresses" @click="mobileMenuOpen = false">Dresses</router-link>
-        <router-link to="/category/tops" @click="mobileMenuOpen = false">Tops</router-link>
-        <router-link to="/category/ethnic" @click="mobileMenuOpen = false">Ethnic Wear</router-link>
+        <router-link
+          v-for="cat in fashionCategories"
+          :key="cat.id"
+          :to="`/category/${cat.slug}`"
+          @click="mobileMenuOpen = false"
+        >{{ cat.name }}</router-link>
       </div>
     </div>
 
@@ -146,7 +155,7 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from 'vue';
+import { ref, watch, nextTick, computed, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useCartStore } from '../stores/cart';
 import { useRouter } from 'vue-router';
@@ -155,6 +164,37 @@ import axios from 'axios';
 const authStore = useAuthStore();
 const cartStore = useCartStore();
 const router = useRouter();
+
+const categories = ref([]);
+const siteName = ref('Glow & Glam');
+const siteLogo = ref('');
+
+const cosmeticsCategories = computed(() =>
+  categories.value.filter(c => c.type === 'cosmetics')
+);
+const fashionCategories = computed(() =>
+  categories.value.filter(c => c.type === 'dress')
+);
+
+async function fetchCategories() {
+  try {
+    const response = await axios.get('/categories');
+    categories.value = response.data || [];
+  } catch (err) {
+    console.error('Failed to fetch categories:', err);
+  }
+}
+
+async function fetchSettings() {
+  try {
+    const response = await axios.get('/settings');
+    const data = response.data;
+    if (data.site_name) siteName.value = data.site_name;
+    if (data.site_logo) siteLogo.value = data.site_logo;
+  } catch (err) {
+    console.error('Failed to fetch settings:', err);
+  }
+}
 
 const mobileMenuOpen = ref(false);
 const showSearch = ref(false);
@@ -172,12 +212,12 @@ watch(showSearch, (val) => {
 
 function handleSearch() {
   clearTimeout(searchTimeout);
-  
+
   if (searchQuery.value.length < 2) {
     searchResults.value = [];
     return;
   }
-  
+
   searchTimeout = setTimeout(async () => {
     try {
       const response = await axios.get(`/products/search?q=${searchQuery.value}`);
@@ -192,4 +232,9 @@ function logout() {
   authStore.logout();
   router.push('/');
 }
+
+onMounted(() => {
+  fetchCategories();
+  fetchSettings();
+});
 </script>

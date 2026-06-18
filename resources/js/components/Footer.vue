@@ -5,9 +5,10 @@
         <!-- Brand -->
         <div class="footer-brand">
           <router-link to="/" class="footer-logo">
-            <span class="logo-glow">Glow</span>
-            <span class="logo-amp">&</span>
-            <span class="logo-glam">Glam</span>
+            <img v-if="siteLogo" :src="siteLogo" :alt="siteName" class="footer-logo-img" />
+            <template v-else>
+              <span class="logo-glow">{{ siteName }}</span>
+            </template>
           </router-link>
           <p class="footer-tagline">Your Destination for Beauty & Fashion</p>
           <div class="social-links">
@@ -22,11 +23,9 @@
         <div class="footer-section">
           <h4>Shop</h4>
           <ul>
-            <li><router-link to="/category/skincare">Skincare</router-link></li>
-            <li><router-link to="/category/makeup">Makeup</router-link></li>
-            <li><router-link to="/category/dresses">Dresses</router-link></li>
-            <li><router-link to="/category/tops">Tops & T-shirts</router-link></li>
-            <li><router-link to="/category/ethnic">Ethnic Wear</router-link></li>
+            <li v-for="cat in categories" :key="cat.id">
+              <router-link :to="`/category/${cat.slug}`">{{ cat.name }}</router-link>
+            </li>
           </ul>
         </div>
 
@@ -85,23 +84,48 @@
       </div>
       <div class="footer-developer">
         <p>Developed by <a href="https://metasoftinfo.com" target="_blank" rel="noopener noreferrer">Metasoft Info Solutions</a></p>
+        <router-link to="/admin/login" class="admin-login-link">Admin Login</router-link>
       </div>
     </div>
   </footer>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
 
 const email = ref('');
 const loading = ref(false);
 const message = ref('');
 const messageType = ref('');
+const categories = ref([]);
+const siteName = ref('Glow & Glam');
+const siteLogo = ref('');
+
+async function fetchCategories() {
+  try {
+    const res = await axios.get('/categories');
+    categories.value = res.data || [];
+  } catch (err) {
+    console.error('Failed to fetch footer categories:', err);
+  }
+}
+
+async function fetchSettings() {
+  try {
+    const res = await axios.get('/settings');
+    const data = res.data;
+    if (data.site_name) siteName.value = data.site_name;
+    if (data.site_logo) siteLogo.value = data.site_logo;
+  } catch (err) {
+    console.error('Failed to fetch footer settings:', err);
+  }
+}
 
 async function subscribe() {
   loading.value = true;
   message.value = '';
-  
+
   // Simulate API call
   setTimeout(() => {
     message.value = 'Thank you for subscribing!';
@@ -110,4 +134,9 @@ async function subscribe() {
     loading.value = false;
   }, 1000);
 }
+
+onMounted(() => {
+  fetchCategories();
+  fetchSettings();
+});
 </script>

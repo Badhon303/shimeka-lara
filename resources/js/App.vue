@@ -24,6 +24,6 @@ import Toast from './components/Toast.vue';
 const route = useRoute();
 const authStore = useAuthStore();
 
-const isAdminRoute = computed(() => route.path.startsWith('/admin'));
+const isAdminRoute = computed(() => route.path.startsWith('/admin') && route.path !== '/admin/login');
 const isAdmin = computed(() => authStore.user?.is_admin);
 </script>

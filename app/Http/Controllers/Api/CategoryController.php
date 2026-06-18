@@ -14,10 +14,11 @@ class CategoryController extends Controller
             ->with(['children' => function ($q) {
                 $q->active();
             }])
+            ->withCount('products')
             ->whereNull('parent_id')
             ->orderBy('sort_order')
             ->get();
-        
+
         return response()->json($categories);
     }
 
@@ -60,14 +61,22 @@ class CategoryController extends Controller
             'slug' => 'nullable|string|unique:categories',
             'description' => 'nullable|string',
             'image' => 'nullable|string',
+            'image_file' => 'nullable|image|max:2048',
             'icon' => 'nullable|string',
             'type' => 'required|in:cosmetics,dress',
             'parent_id' => 'nullable|exists:categories,id',
+            'sort_order' => 'nullable|integer',
             'is_active' => 'boolean',
         ]);
 
+        if ($request->hasFile('image_file')) {
+            $validated['image'] = '/storage/' . $request->file('image_file')->store('categories', 'public');
+        }
+
+        unset($validated['image_file']);
+
         $category = Category::create($validated);
-        
+
         return response()->json([
             'message' => 'Category created successfully!',
             'category' => $category
@@ -77,17 +86,26 @@ class CategoryController extends Controller
     public function update(Request $request, $id)
     {
         $category = Category::findOrFail($id);
-        
+
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
             'image' => 'nullable|string',
+            'image_file' => 'nullable|image|max:2048',
+            'icon' => 'nullable|string',
             'type' => 'sometimes|in:cosmetics,dress',
+            'sort_order' => 'nullable|integer',
             'is_active' => 'boolean',
         ]);
 
+        if ($request->hasFile('image_file')) {
+            $validated['image'] = '/storage/' . $request->file('image_file')->store('categories', 'public');
+        }
+
+        unset($validated['image_file']);
+
         $category->update($validated);
-        
+
         return response()->json([
             'message' => 'Category updated successfully!',
             'category' => $category

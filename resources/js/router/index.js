@@ -80,6 +80,14 @@ const routes = [
     meta: { requiresAuth: true }
   },
 
+  // Admin Login (separate from customer login)
+  {
+    path: '/admin/login',
+    name: 'AdminLogin',
+    component: () => import('../views/admin/AdminLogin.vue'),
+    meta: { adminLogin: true }
+  },
+
   // Admin Routes
   {
     path: '/admin',
@@ -167,10 +175,16 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
-  
+
   // Check auth status if token exists
   if (localStorage.getItem('token') && !authStore.user) {
     await authStore.fetchUser();
+  }
+
+  // Redirect logged-in admin away from admin login to dashboard
+  if (to.meta.adminLogin && authStore.user?.is_admin) {
+    next('/admin');
+    return;
   }
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
