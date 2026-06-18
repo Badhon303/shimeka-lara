@@ -10,7 +10,7 @@
               <span class="logo-glow">{{ siteName }}</span>
             </template>
           </router-link>
-          <p class="footer-tagline">Your Destination for Beauty & Fashion</p>
+          <p class="footer-tagline">Your Destination for Cosmetics & Fashion</p>
           <div class="social-links">
             <a href="#" target="_blank" rel="noopener"><i class="icon-facebook"></i></a>
             <a href="#" target="_blank" rel="noopener"><i class="icon-instagram"></i></a>
@@ -54,8 +54,8 @@
 
         <!-- Newsletter -->
         <div class="footer-section newsletter">
-          <h4>Stay in the Glow</h4>
-          <p>Subscribe for exclusive offers and beauty tips!</p>
+          <h4>Stay Updated</h4>
+          <p>Subscribe for exclusive offers and latest updates!</p>
           <form @submit.prevent="subscribe" class="newsletter-form">
             <input 
               v-model="email" 
@@ -72,7 +72,7 @@
       </div>
 
       <div class="footer-bottom">
-        <p>&copy; {{ new Date().getFullYear() }} Glow & Glam. All rights reserved.</p>
+        <p>&copy; {{ new Date().getFullYear() }} {{ siteName }}. All rights reserved.</p>
         <div class="payment-methods">
           <span>We Accept:</span>
           <div class="payment-icons">
@@ -98,7 +98,7 @@ const loading = ref(false);
 const message = ref('');
 const messageType = ref('');
 const categories = ref([]);
-const siteName = ref('Glow & Glam');
+const siteName = ref('Sʜɪᴍᴇᴋᴀ');
 const siteLogo = ref('');
 
 async function fetchCategories() {
