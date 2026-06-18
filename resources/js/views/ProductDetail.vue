@@ -3,7 +3,12 @@
     <div v-if="loading" class="loading-container">
       <div class="skeleton-detail"></div>
     </div>
-    
+
+    <div v-else-if="error" class="error-container">
+      <p>{{ error }}</p>
+      <router-link to="/shop" class="btn btn-primary">Browse Products</router-link>
+    </div>
+
     <div v-else-if="product" class="container">
       <!-- Breadcrumb -->
       <nav class="breadcrumb">
@@ -24,10 +29,10 @@
             </div>
           </div>
           <div v-if="product.images?.length > 1" class="thumbnail-list">
-            <img 
-              v-for="(img, index) in product.images" 
+            <img
+              v-for="(img, index) in product.images"
               :key="index"
-              :src="img" 
+              :src="img"
               :class="['thumbnail', { active: selectedImage === img }]"
               @click="selectedImage = img"
             />
@@ -36,18 +41,18 @@
 
         <!-- Product Info -->
         <div class="product-info">
-          <span class="product-brand">{{ product.brand || 'Glow & Glam' }}</span>
+          <span class="product-brand">{{ product.brand || siteName }}</span>
           <h1 class="product-title">{{ product.name }}</h1>
-          
+
           <div class="product-rating">
             <span class="stars">{{ '★'.repeat(Math.round(product.rating || 0)) }}</span>
             <span class="rating-count">{{ product.review_count || 0 }} reviews</span>
           </div>
 
           <div class="product-price-section">
-            <span class="current-price">৳{{ product.price }}</span>
-            <span v-if="product.compare_price > product.price" class="compare-price">৳{{ product.compare_price }}</span>
-            <span v-if="product.discount_percentage > 0" class="save-badge">Save ৳{{ product.compare_price - product.price }}</span>
+            <span class="current-price">৳{{ currentPrice }}</span>
+            <span v-if="product.compare_price > currentPrice" class="compare-price">৳{{ product.compare_price }}</span>
+            <span v-if="product.discount_percentage > 0" class="save-badge">Save ৳{{ product.compare_price - currentPrice }}</span>
           </div>
 
           <p class="product-short-desc">{{ product.short_description }}</p>
@@ -55,7 +60,7 @@
           <!-- Variants -->
           <div v-if="hasVariants" class="variants-section">
             <div v-for="(options, key) in variantOptions" :key="key" class="variant-group">
-              <label>{{ formatLabel(key) }}:</label>
+              <label>{{ formatLabel(key) }}: <strong class="selected-value">{{ selectedVariants[key] ? selectedVariants[key] : 'Select ' + formatLabel(key) }}</strong></label>
               <div class="variant-options">
                 <!-- Color swatches -->
                 <template v-if="key.toLowerCase() === 'color'">
@@ -84,7 +89,7 @@
               </div>
             </div>
             <p v-if="!allVariantsSelected" class="variant-hint">
-              Please select all options above
+              Please select all options above to continue
             </p>
           </div>
 
@@ -105,7 +110,7 @@
               <button @click="canIncreaseQty && quantity++" :disabled="!canIncreaseQty">+</button>
             </div>
             <span v-if="currentStock > 0" class="stock-status in-stock">
-              ✓ {{ currentStock }} in stock
+              ✓ {{ currentStock }} available
             </span>
             <span v-else class="stock-status out-stock">Out of stock</span>
           </div>
@@ -120,6 +125,15 @@
               <span v-if="addingToCart">Adding...</span>
               <span v-else-if="!allVariantsSelected">Select Options</span>
               <span v-else>Add to Cart — ৳{{ totalPrice }}</span>
+            </button>
+            <button
+              @click="buyNow"
+              class="btn btn-secondary btn-lg buy-now-btn"
+              :disabled="buyingNow || currentStock === 0 || !allVariantsSelected"
+            >
+              <span v-if="buyingNow">Processing...</span>
+              <span v-else-if="!allVariantsSelected">Select Options</span>
+              <span v-else>Buy Now</span>
             </button>
             <button @click="addToWishlist" class="btn btn-outline btn-lg wishlist-btn">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -149,8 +163,8 @@
       <!-- Tabs -->
       <div class="product-tabs">
         <div class="tab-buttons">
-          <button 
-            v-for="tab in tabs" 
+          <button
+            v-for="tab in tabs"
             :key="tab.id"
             :class="['tab-btn', { active: activeTab === tab.id }]"
             @click="activeTab = tab.id"
@@ -212,42 +226,44 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import ProductCard from '../components/ProductCard.vue';
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
 
 const route = useRoute();
+const router = useRouter();
 const cartStore = useCartStore();
 const authStore = useAuthStore();
 
 const product = ref(null);
 const relatedProducts = ref([]);
 const loading = ref(true);
+const error = ref('');
 const addingToCart = ref(false);
+const buyingNow = ref(false);
 const quantity = ref(1);
 const selectedImage = ref(null);
 const selectedVariants = ref({});
 const activeTab = ref('description');
+const siteName = ref('Sʜɪᴍᴇᴋᴀ');
 
-const tabs = [
+const tabs = ref([
   { id: 'description', name: 'Description' },
-  { id: 'reviews', name: `Reviews (${product.value?.review_count || 0})` },
+  { id: 'reviews', name: 'Reviews (0)' },
   { id: 'shipping', name: 'Shipping' }
-];
+]);
 
 const hasVariants = computed(() => {
   return product.value?.attributes && Object.keys(product.value.attributes).length > 0;
 });
 
 const variantOptions = computed(() => {
-  // Use product.attributes for available options (e.g. {size: ['S','M'], color: ['Blue']})
   return product.value?.attributes || {};
 });
 
-// Find the matching variant from product.variants based on selected options
 const selectedVariantData = computed(() => {
   if (!product.value?.variants?.length || !allVariantsSelected.value) return null;
   const sv = selectedVariants.value;
@@ -256,15 +272,12 @@ const selectedVariantData = computed(() => {
   }) || null;
 });
 
-// Show color-specific image if a color variant is selected
 const displayImage = computed(() => {
-  // If a color is selected and that variant has an image, show it
   const color = selectedVariants.value?.color;
   if (color && product.value?.variants) {
     const match = product.value.variants.find(v => v.color === color && v.image);
     if (match?.image) return match.image;
   }
-  // For lipstick/shade
   const shade = selectedVariants.value?.shade;
   if (shade && product.value?.variants) {
     const match = product.value.variants.find(v => v.shade === shade && v.image);
@@ -300,24 +313,24 @@ function formatLabel(key) {
 }
 
 function getColorHex(colorName) {
+  if (!colorName) return '#CBD5E1';
   const map = {
     'red': '#EF4444', 'green': '#22C55E', 'blue': '#3B82F6', 'yellow': '#EAB308',
     'pink': '#EC4899', 'purple': '#A855F7', 'orange': '#F97316', 'black': '#111827',
     'white': '#F9FAFB', 'cream': '#FEF3C7', 'brown': '#92400E', 'tan': '#D4A574',
     'navy': '#1E3A5F', 'teal': '#0D9488', 'maroon': '#7F1D1D', 'grey': '#6B7280',
-    'light blue': '#BFDBFE', 'lightblue': '#BFDBFE',
+    'gray': '#6B7280', 'light blue': '#BFDBFE', 'lightblue': '#BFDBFE',
+    'gold': '#FFD700', 'silver': '#C0C0C0', 'beige': '#F5F5DC',
   };
-  return map[colorName.toLowerCase()] || '#CBD5E1';
+  return map[colorName.toLowerCase().trim()] || '#CBD5E1';
 }
 
 function isVariantAvailable(key, option) {
   if (!product.value?.variants?.length) return true;
-  // If no other variant selected yet, all are available
   const otherSelections = { ...selectedVariants.value };
   delete otherSelections[key];
   const otherKeys = Object.keys(otherSelections).filter(k => otherSelections[k] !== undefined);
   if (otherKeys.length === 0) return true;
-  // Check if any variant exists with this option + other selections
   return product.value.variants.some(v => {
     if (v[key] !== option) return false;
     return otherKeys.every(k => v[k] === otherSelections[k]);
@@ -326,22 +339,33 @@ function isVariantAvailable(key, option) {
 
 async function fetchProduct() {
   loading.value = true;
-  
+  error.value = '';
+  selectedVariants.value = {};
+  selectedImage.value = null;
+  quantity.value = 1;
+
   try {
     const response = await axios.get(`/product/${route.params.slug}`);
     product.value = response.data.product;
-    relatedProducts.value = response.data.related_products;
-    tabs[1].name = `Reviews (${product.value.review_count || 0})`;
+    relatedProducts.value = response.data.related_products || [];
+    tabs.value[1].name = `Reviews (${product.value?.review_count || 0})`;
   } catch (err) {
     console.error('Failed to fetch product:', err);
+    error.value = 'Product not found or failed to load.';
   } finally {
     loading.value = false;
   }
 }
 
 function selectVariant(key, value) {
-  selectedVariants.value = { ...selectedVariants.value, [key]: value };
-  // Reset quantity if current qty exceeds new variant stock
+  if (selectedVariants.value[key] === value) {
+    // Toggle off if clicking same option
+    const newVariants = { ...selectedVariants.value };
+    delete newVariants[key];
+    selectedVariants.value = newVariants;
+  } else {
+    selectedVariants.value = { ...selectedVariants.value, [key]: value };
+  }
   if (selectedVariantData.value && quantity.value > selectedVariantData.value.stock) {
     quantity.value = Math.max(1, selectedVariantData.value.stock);
   }
@@ -354,7 +378,6 @@ async function addToCart() {
   }
 
   addingToCart.value = true;
-
   const variantData = hasVariants.value ? selectedVariants.value : null;
   const variantPrice = selectedVariantData.value?.price || product.value.price;
   const result = await cartStore.addToCart(product.value, quantity.value, variantData, variantPrice);
@@ -362,8 +385,26 @@ async function addToCart() {
   if (window.$toast) {
     window.$toast(result.message, result.success ? 'success' : 'error');
   }
-
   addingToCart.value = false;
+}
+
+async function buyNow() {
+  if (hasVariants.value && !allVariantsSelected.value) {
+    if (window.$toast) window.$toast('Please select all options', 'error');
+    return;
+  }
+
+  buyingNow.value = true;
+  const variantData = hasVariants.value ? selectedVariants.value : null;
+  const variantPrice = selectedVariantData.value?.price || product.value.price;
+  const result = await cartStore.addToCart(product.value, quantity.value, variantData, variantPrice);
+
+  if (result.success) {
+    router.push('/checkout');
+  } else if (window.$toast) {
+    window.$toast(result.message, 'error');
+  }
+  buyingNow.value = false;
 }
 
 function addToWishlist() {
@@ -379,6 +420,11 @@ function formatDate(date) {
 }
 
 onMounted(fetchProduct);
+
+// Reload product when slug changes (same component reused)
+watch(() => route.params.slug, (newSlug) => {
+  if (newSlug) fetchProduct();
+});
 </script>
 
 <style scoped>
@@ -515,5 +561,50 @@ onMounted(fetchProduct);
 .quantity-selector button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.product-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  opacity: 1;
+  transform: none;
+  position: static;
+  background: none;
+}
+
+.product-actions .btn {
+  flex: 1;
+  min-width: 140px;
+}
+
+.wishlist-btn {
+  width: 52px;
+  flex: 0 0 52px;
+  padding: 0;
+}
+
+.error-container {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: var(--gray-600);
+}
+.error-container p {
+  margin-bottom: 1.5rem;
+  font-size: 1.125rem;
+}
+
+.selected-value {
+  color: var(--primary-600);
+  font-weight: 600;
+  margin-left: 0.25rem;
+}
+
+.buy-now-btn {
+  background: var(--gray-900);
+  color: var(--white);
+}
+.buy-now-btn:hover:not(:disabled) {
+  background: var(--gray-800);
 }
 </style>
