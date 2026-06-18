@@ -426,7 +426,6 @@ watch(() => route.path, () => {
 
 @media (max-width: 768px) {
   .mobile-bottom-nav, .admin-mobile-nav { display: flex; }
-  #app { padding-bottom: 64px; }
   .admin-top-bar { display: none; }
   .admin-main { margin-left: 0; padding-top: 0; }
   .admin-mobile-toggle { display: flex; }

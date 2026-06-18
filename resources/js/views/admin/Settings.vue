@@ -80,6 +80,32 @@
           </div>
         </div>
 
+        <!-- Page Content -->
+        <div class="settings-card full-width">
+          <h3>Page Content</h3>
+          <p class="hint">Edit content that appears on your website pages.</p>
+          <div class="content-tabs">
+            <button
+              v-for="tab in contentTabs"
+              :key="tab.key"
+              :class="['tab-btn', { active: activeContentTab === tab.key }]"
+              @click="activeContentTab = tab.key"
+            >
+              {{ tab.label }}
+            </button>
+          </div>
+          <div class="content-editor">
+            <label>{{ contentTabs.find(t => t.key === activeContentTab)?.label }}</label>
+            <textarea
+              v-model="settings[activeContentTab]"
+              class="form-control content-textarea"
+              rows="10"
+              placeholder="Enter page content... You can use basic HTML like <p>, <h2>, <ul>, <li>, <strong>"
+            ></textarea>
+            <p class="hint">Supports basic HTML: &lt;p&gt;, &lt;h2&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;strong&gt;</p>
+          </div>
+        </div>
+
         <!-- Database Tools -->
         <div class="settings-card full-width">
           <h3>Database Tools</h3>
@@ -119,6 +145,11 @@ const settings = ref({
   site_email: '',
   site_address: '',
   site_logo: '',
+  about_content: '',
+  faq_content: '',
+  shipping_content: '',
+  returns_content: '',
+  size_guide_content: '',
 });
 const heroSlides = ref([]);
 const saving = ref(false);
@@ -132,6 +163,14 @@ const logoPreview = ref('');
 const slideImageFiles = ref({});
 const homeBanners = ref({ cosmetics: '', fashion: '' });
 const inputRefs = {}; // plain object for file inputs
+const activeContentTab = ref('about_content');
+const contentTabs = [
+  { key: 'about_content', label: 'About Us' },
+  { key: 'faq_content', label: 'FAQs' },
+  { key: 'shipping_content', label: 'Shipping Info' },
+  { key: 'returns_content', label: 'Returns & Exchanges' },
+  { key: 'size_guide_content', label: 'Size Guide' },
+];
 
 function setInputRef(el, index) {
   if (el) inputRefs[index] = el;
@@ -411,6 +450,13 @@ onMounted(fetchSettings);
 .content-link:hover { background: var(--primary-50); border-color: var(--primary-300); color: var(--primary-700); }
 .content-link svg { width: 1.25rem; height: 1.25rem; color: var(--primary-500); }
 .content-link .arrow { margin-left: auto; color: var(--gray-400); width: 1rem; height: 1rem; }
+
+.content-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.tab-btn { padding: 0.5rem 1rem; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500; background: var(--gray-100); color: var(--gray-600); border: 1px solid transparent; }
+.tab-btn:hover { background: var(--gray-200); }
+.tab-btn.active { background: var(--primary-500); color: white; }
+.content-editor label { display: block; font-size: 0.875rem; font-weight: 500; color: var(--gray-700); margin-bottom: 0.5rem; }
+.content-textarea { font-family: monospace; font-size: 0.875rem; line-height: 1.6; }
 
 @media (max-width: 768px) {
   .settings-grid { grid-template-columns: 1fr; }

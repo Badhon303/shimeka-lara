@@ -13,26 +13,27 @@
           <h2>Get in Touch</h2>
           <p>Have questions? We're here to help!</p>
           
-          <div class="info-items">
-            <div class="info-item">
+          <div v-if="loading" class="loading-text">Loading...</div>
+          <div v-else class="info-items">
+            <div v-if="contact.address" class="info-item">
               <span class="icon">📍</span>
               <div>
                 <h4>Address</h4>
-                <p>123 Gulshan Avenue, Dhaka 1212</p>
+                <p>{{ contact.address }}</p>
               </div>
             </div>
-            <div class="info-item">
+            <div v-if="contact.phone" class="info-item">
               <span class="icon">📞</span>
               <div>
                 <h4>Phone</h4>
-                <p>+880 1234-567890</p>
+                <p>{{ contact.phone }}</p>
               </div>
             </div>
-            <div class="info-item">
+            <div v-if="contact.email" class="info-item">
               <span class="icon">✉️</span>
               <div>
                 <h4>Email</h4>
-                <p>hello@glowglam.com</p>
+                <p>{{ contact.email }}</p>
               </div>
             </div>
           </div>
@@ -62,19 +63,43 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
 
 const form = ref({ name: '', email: '', message: '' });
 const sending = ref(false);
+const contact = ref({ email: '', phone: '', address: '' });
+const loading = ref(true);
+
+async function fetchSettings() {
+  try {
+    const res = await axios.get('/settings');
+    contact.value = {
+      email: res.data.site_email || '',
+      phone: res.data.site_phone || '',
+      address: res.data.site_address || '',
+    };
+  } catch (e) {
+    console.error('Failed to load contact settings:', e);
+  } finally {
+    loading.value = false;
+  }
+}
 
 async function submitForm() {
   sending.value = true;
-  // Simulate API call
-  await new Promise(r => setTimeout(r, 1000));
-  if (window.$toast) window.$toast('Message sent!', 'success');
-  form.value = { name: '', email: '', message: '' };
-  sending.value = false;
+  try {
+    await axios.post('/contact', form.value);
+    if (window.$toast) window.$toast('Message sent! We will get back to you soon.', 'success');
+    form.value = { name: '', email: '', message: '' };
+  } catch (e) {
+    if (window.$toast) window.$toast('Failed to send message. Please try again.', 'error');
+  } finally {
+    sending.value = false;
+  }
 }
+
+onMounted(fetchSettings);
 </script>
 
 <style scoped>

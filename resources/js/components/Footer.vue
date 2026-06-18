@@ -34,21 +34,7 @@
           <h4>Customer Service</h4>
           <ul>
             <li><router-link to="/contact">Contact Us</router-link></li>
-            <li><router-link to="/faq">FAQs</router-link></li>
-            <li><router-link to="/shipping">Shipping Info</router-link></li>
-            <li><router-link to="/returns">Returns & Exchanges</router-link></li>
-            <li><router-link to="/size-guide">Size Guide</router-link></li>
-          </ul>
-        </div>
-
-        <!-- About -->
-        <div class="footer-section">
-          <h4>About</h4>
-          <ul>
             <li><router-link to="/about">About Us</router-link></li>
-            <li><router-link to="/careers">Careers</router-link></li>
-            <li><router-link to="/press">Press</router-link></li>
-            <li><router-link to="/sustainability">Sustainability</router-link></li>
           </ul>
         </div>
 
@@ -74,12 +60,7 @@
       <div class="footer-bottom">
         <p>&copy; {{ new Date().getFullYear() }} {{ siteName }}. All rights reserved.</p>
         <div class="payment-methods">
-          <span>We Accept:</span>
-          <div class="payment-icons">
-            <span class="payment-icon">💳</span>
-            <span class="payment-icon">📱</span>
-            <span class="payment-icon">💰</span>
-          </div>
+          <span class="cod-badge">� Cash on Delivery</span>
         </div>
       </div>
       <div class="footer-developer">

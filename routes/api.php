@@ -42,6 +42,9 @@ Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/category/{slug}', [CategoryController::class, 'show']);
 Route::get('/category/{slug}/products', [CategoryController::class, 'products']);
 
+// Contact form (public)
+Route::post('/contact', [AdminController::class, 'storeContact']);
+
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -100,6 +103,11 @@ Route::middleware('auth:sanctum')->group(function () {
         // Reports
         Route::get('/reports/sales', [AdminController::class, 'salesReport']);
         Route::get('/reports/orders', [AdminController::class, 'ordersReport']);
+
+        // Contact Submissions
+        Route::get('/contacts', [AdminController::class, 'listContacts']);
+        Route::put('/contacts/{id}/read', [AdminController::class, 'markContactRead']);
+        Route::delete('/contacts/{id}', [AdminController::class, 'deleteContact']);
 
         // Database Tools
         Route::get('/db-export', [AdminController::class, 'exportDb']);

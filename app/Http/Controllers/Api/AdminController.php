@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Setting;
 use App\Models\Coupon;
+use App\Models\Contact;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -355,5 +356,43 @@ class AdminController extends Controller
         }
 
         return response()->json(['message' => 'Database imported successfully!']);
+    }
+
+    public function storeContact(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'message' => 'required|string|max:5000',
+        ]);
+
+        Contact::create($validated);
+
+        return response()->json(['message' => 'Message sent successfully']);
+    }
+
+    public function listContacts(Request $request)
+    {
+        $query = Contact::query()->orderBy('created_at', 'desc');
+
+        if ($request->has('unread')) {
+            $query->where('read', false);
+        }
+
+        return response()->json($query->paginate(20));
+    }
+
+    public function markContactRead($id)
+    {
+        $contact = Contact::findOrFail($id);
+        $contact->update(['read' => true]);
+        return response()->json(['message' => 'Marked as read']);
+    }
+
+    public function deleteContact($id)
+    {
+        $contact = Contact::findOrFail($id);
+        $contact->delete();
+        return response()->json(['message' => 'Deleted']);
     }
 }
