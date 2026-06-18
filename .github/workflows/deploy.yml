@@ -1,0 +1,58 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        run: |
+          ssh ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
+            set -e
+            cd ${{ secrets.REMOTE_PATH }}
+
+            # Pull latest code
+            git pull origin $(git rev-parse --abbrev-ref HEAD)
+
+            # Install dependencies
+            composer install --no-interaction --prefer-dist --optimize-autoloader
+
+            # Run migrations
+            php artisan migrate --force
+
+            # Seed database if empty (fresh deploy or data loss)
+            php artisan db:seed-if-empty
+
+            # Clear and cache config/routes/views
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan view:clear
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            # Set proper permissions
+            chmod -R 775 storage bootstrap/cache
+            chown -R www-data:www-data storage bootstrap/cache
+
+            echo "Deployment completed successfully!"
+          EOF

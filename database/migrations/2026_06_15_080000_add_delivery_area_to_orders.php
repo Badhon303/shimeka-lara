@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->string('delivery_area')->nullable()->after('shipping_postal_code');
-            $table->string('delivery_charge_label')->nullable()->after('delivery_area');
+            $table->string('delivery_area')->nullable();
+            $table->string('delivery_charge_label')->nullable();
         });
     }
 

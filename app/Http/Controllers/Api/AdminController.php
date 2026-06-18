@@ -153,13 +153,22 @@ class AdminController extends Controller
     public function salesReport(Request $request)
     {
         $period = $request->get('period', 'month');
-        $format = $period === 'year' ? '%Y-%m' : '%Y-%m-%d';
         $days = $period === 'year' ? 365 : ($period === 'month' ? 30 : 7);
+
+        $driver = DB::getDriverName();
+        if ($driver === 'pgsql') {
+            $dateRaw = "TO_CHAR(created_at, '" . ($period === 'year' ? 'YYYY-MM' : 'YYYY-MM-DD') . "') as date";
+        } elseif ($driver === 'mysql') {
+            $dateRaw = "DATE_FORMAT(created_at, '" . ($period === 'year' ? '%Y-%m' : '%Y-%m-%d') . "') as date";
+        } else {
+            $format = $period === 'year' ? '%Y-%m' : '%Y-%m-%d';
+            $dateRaw = "strftime('" . $format . "', created_at) as date";
+        }
 
         $sales = Order::where('created_at', '>=', now()->subDays($days))
             ->where('status', '!=', 'cancelled')
             ->select(
-                DB::raw("strftime('" . $format . "', created_at) as date"),
+                DB::raw($dateRaw),
                 DB::raw('SUM(total) as revenue'),
                 DB::raw('COUNT(*) as orders')
             )

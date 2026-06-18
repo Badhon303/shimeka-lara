@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->string('coupon_code')->nullable()->after('shipping_cost');
-            $table->decimal('discount_amount', 10, 2)->default(0)->after('coupon_code');
+            $table->string('coupon_code')->nullable();
+            $table->decimal('discount_amount', 10, 2)->default(0);
         });
     }
 

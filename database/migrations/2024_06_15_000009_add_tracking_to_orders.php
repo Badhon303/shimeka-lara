@@ -9,9 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->string('tracking_number')->nullable()->after('status');
-            $table->string('courier_name')->nullable()->after('tracking_number');
-            $table->decimal('courier_charge', 10, 2)->default(0)->after('shipping_cost');
+            $table->string('tracking_number')->nullable();
+            $table->string('courier_name')->nullable();
+            $table->decimal('courier_charge', 10, 2)->default(0);
         });
     }
 
